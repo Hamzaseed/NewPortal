@@ -1,0 +1,18 @@
+
+.cms-shell [class*='rounded'] {
+  border-radius: 0 !important;
+}
+
+.cms-shell .cms-round {
+  border-radius: 9999px !important;
+}
+
+.cms-shell .cms-toggle-track,
+.cms-shell .cms-toggle-track::after {
+  border-radius: 9999px !important;
+}
+
+.cms-shell .cms-numeric {
+  font-style: italic;
+  font-size: 0.96em;
+}
