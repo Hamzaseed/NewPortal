@@ -1,9 +1,14 @@
 ﻿import { useSearch } from '../../context/SearchContext'
+import { AppLink } from '../ui/AppLink'
 import Icon from '../ui/Icon'
-import { siteMeta } from '../../data/newsData'
-
 function TopUtilityBar() {
   const { openSearch } = useSearch()
+  const today = new Date().toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
 
   return (
     <div className="border-b border-slate-200 bg-white/90 backdrop-blur-sm">
@@ -11,11 +16,7 @@ function TopUtilityBar() {
         <div className="flex items-center gap-3 sm:gap-4">
           <span className="flex min-w-0 items-center gap-2">
             <Icon name="calendar_today" className="h-3.5 w-3.5" />
-            <span className="truncate">{siteMeta.date}</span>
-          </span>
-          <span className="hidden items-center gap-2 border-l border-slate-200 pl-3 min-[420px]:flex sm:pl-4">
-            <Icon name="partly_cloudy_day" className="h-3.5 w-3.5" />
-            {siteMeta.weather}
+            <span className="truncate">{today}</span>
           </span>
         </div>
 
@@ -35,12 +36,12 @@ function TopUtilityBar() {
             >
               <Icon name="search" className="h-4 w-4" />
             </button>
-            <button
-              type="button"
+            <AppLink
+              to="/subscriptions"
               className="rounded bg-primary px-3 py-1 text-[10px] font-bold tracking-[0.16em] text-white transition hover:bg-primary/90"
             >
               Subscribe
-            </button>
+            </AppLink>
           </div>
         </div>
       </div>

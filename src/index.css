@@ -41,9 +41,7 @@
 
   body {
     @apply m-0 bg-background-light text-slate-900 antialiased;
-    background-image:
-      radial-gradient(circle at top left, rgba(180, 34, 34, 0.08), transparent 28%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(248, 246, 246, 1));
+    background-image: none;
   }
 
   p {
@@ -120,5 +118,65 @@
 
   .admin-search {
     @apply admin-input bg-background-light;
+  }
+
+  .cms-shell [class*='rounded'] {
+    border-radius: 0 !important;
+  }
+
+  .cms-shell .cms-round {
+    border-radius: 9999px !important;
+  }
+
+  .cms-shell .cms-toggle-track,
+  .cms-shell .cms-toggle-track::after {
+    border-radius: 9999px !important;
+  }
+
+  .cms-numeric {
+    @apply italic;
+    font-size: 0.96em;
+  }
+}
+
+@layer utilities {
+  .market-flash-up {
+    animation: market-flash-up 0.7s ease-out;
+  }
+
+  .market-flash-down {
+    animation: market-flash-down 0.7s ease-out;
+  }
+
+  .ticker-fade {
+    background: linear-gradient(90deg, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0));
+  }
+
+  .ticker-fade-right {
+    background: linear-gradient(270deg, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0));
+  }
+}
+
+@keyframes market-flash-up {
+  0% {
+    color: #bbf7d0;
+    text-shadow: 0 0 18px rgba(52, 211, 153, 0.6);
+  }
+
+  100% {
+    color: inherit;
+    text-shadow: none;
+  }
+}
+
+@keyframes market-flash-down {
+  0% {
+    color: #fecdd3;
+    text-shadow: 0 0 18px rgba(244, 63, 94, 0.45);
+  }
+
+  100% {
+    color: inherit;
+    text-shadow: none;
   }
 }

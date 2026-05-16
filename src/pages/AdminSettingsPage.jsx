@@ -1,6 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import SocialLinksEditor from '../components/socialsettings/SocialLinksEditor'
 import { AppLink } from '../components/ui/AppLink'
 import Icon from '../components/ui/Icon'
+import {
+  fetchSettings,
+  updateSettings,
+} from '../../app/settings/settingSlice'
 
 function ToggleRow({ title, description, enabled = false }) {
   return (
@@ -17,46 +23,101 @@ function ToggleRow({ title, description, enabled = false }) {
   )
 }
 
+function ImageUploadField({
+  field,
+  label,
+  alt,
+  placeholder,
+  emptyText,
+  icon = 'upload_file',
+  inputType = 'url',
+  accept = 'image/*',
+  previewClassName = 'mx-auto h-28 w-full rounded-md object-cover',
+  previewValue,
+  value,
+  onUpload,
+  onChange,
+}) {
+  return (
+    <div>
+      <label htmlFor={field} className="text-sm font-semibold text-slate-700">
+        {label}
+      </label>
+      <div className="relative mt-2 rounded-lg border-2 border-dashed border-primary/15 bg-white p-8 text-center">
+        {previewValue ? (
+          <img src={previewValue} alt={alt} className={previewClassName} />
+        ) : (
+          <>
+            <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/5">
+              <Icon name={icon} className="h-6 w-6 text-slate-500" />
+            </div>
+            <p className="text-sm text-slate-500">{emptyText}</p>
+          </>
+        )}
+        <input
+          type="file"
+          accept={accept}
+          className="absolute inset-0 cursor-pointer opacity-0"
+          onChange={(event) => onUpload(field, event.target.files?.[0])}
+        />
+      </div>
+      <input
+        id={field}
+        type={inputType}
+        className="admin-input mt-3 px-4 py-2"
+        placeholder={placeholder}
+        value={value}
+        onChange={(event) => onChange(field, event.target.value)}
+      />
+    </div>
+  )
+}
+
 function AdminSettingsPage() {
-  const [settings, setSettings] = useState({
-    authLoginImageUrl: '',
-    authSignupImageUrl: '',
-  })
-  const [socialLinks, setSocialLinks] = useState([
-    { id: 'twitter', platform: 'Twitter', url: 'https://twitter.com/dailyobserver' },
-    { id: 'facebook', platform: 'Facebook', url: 'https://facebook.com/dailyobserver' },
-    { id: 'instagram', platform: 'Instagram', url: '' },
-  ])
+  const dispatch = useDispatch()
+  const { settings: storeSettings, loading, error } = useSelector((state) => state.settings)
+  const [settings, setSettings] = useState(storeSettings)
+  const [files, setFiles] = useState({})
+  const apiBaseUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+
+  useEffect(() => {
+    dispatch(fetchSettings())
+  }, [dispatch])
+
+  useEffect(() => {
+    setSettings(storeSettings)
+  }, [storeSettings])
 
   function handleImageUpload(field, file) {
     if (!file) return
 
     const previewUrl = URL.createObjectURL(file)
+    setFiles((current) => ({
+      ...current,
+      [field]: file,
+    }))
     setSettings((current) => ({
       ...current,
       [field]: previewUrl,
     }))
   }
 
-  function handleAddSocialLink() {
-    setSocialLinks((current) => [
+  function handleSettingChange(field, value) {
+    setSettings((current) => ({
       ...current,
-      {
-        id: `social-${Date.now()}-${current.length}`,
-        platform: '',
-        url: '',
-      },
-    ])
+      [field]: value,
+    }))
   }
 
-  function handleSocialLinkChange(id, field, value) {
-    setSocialLinks((current) =>
-      current.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
-    )
-  }
+  function handleSaveSettings() {
+    const formData = new FormData()
 
-  function handleRemoveSocialLink(id) {
-    setSocialLinks((current) => current.filter((item) => item.id !== id))
+    formData.append('site_logo_url', files.site_logo_url || settings.site_logo_url || '')
+    formData.append('favicon_url', files.favicon_url || settings.favicon_url || '')
+    formData.append('auth_login_image_url', files.auth_login_image_url || settings.auth_login_image_url || '')
+    formData.append('auth_signup_image_url', files.auth_signup_image_url || settings.auth_signup_image_url || '')
+
+    dispatch(updateSettings(formData))
   }
 
   return (
@@ -67,105 +128,94 @@ function AdminSettingsPage() {
           <p className="text-xs text-slate-500 sm:text-sm">Update your publication's visual identity.</p>
         </div>
 
+        {error ? <p className="mb-4 text-sm text-red-600">{error}</p> : null}
+
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          {[
-            ['Site Logo', 'SVG, PNG or JPEG. Max size 2MB. Recommended 512x128px.', 'upload_file', 'Update Logo'],
-            ['Favicon', 'ICO or PNG. Recommended 32x32px or 64x64px.', 'image', 'Update Favicon'],
-          ].map(([title, text, icon, action]) => (
-            <article key={title} className="flex items-start gap-6 rounded-xl border border-primary/5 bg-white p-6">
-              <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-lg border-2 border-dashed border-primary/20 bg-slate-100">
-                <Icon name={icon} className="h-6 w-6 text-slate-400" />
-              </div>
-              <div>
-                <h4 className="mb-1 font-bold">{title}</h4>
-                <p className="mb-4 text-xs text-slate-500">{text}</p>
-                <button type="button" className="rounded border border-primary px-3 py-1.5 text-xs font-bold text-primary transition-colors hover:bg-primary hover:text-white">
-                  {action}
-                </button>
-              </div>
-            </article>
-          ))}
+          <ImageUploadField
+            field="site_logo_url"
+            label="Site Logo"
+            alt="Site Logo Preview"
+            placeholder="https://..."
+            emptyText="Upload or paste site logo URL"
+            icon="upload_file"
+            accept=".svg,.png,.jpg,.jpeg,image/svg+xml,image/png,image/jpeg"
+            previewClassName="mx-auto h-28 w-full rounded-md object-contain"
+            previewValue={
+              settings.site_logo_url?.startsWith('/uploads/')
+                ? `${apiBaseUrl}${settings.site_logo_url}`
+                : settings.site_logo_url
+            }
+            value={settings.site_logo_url}
+            onUpload={handleImageUpload}
+            onChange={handleSettingChange}
+          />
+          <ImageUploadField
+            field="favicon_url"
+            label="Favicon"
+            alt="Favicon Preview"
+            placeholder="https://..."
+            emptyText="Upload or paste favicon URL"
+            icon="image"
+            inputType="url"
+            accept=".ico,.png,image/x-icon,image/vnd.microsoft.icon,image/png"
+            previewClassName="mx-auto h-20 w-20 rounded-md object-contain"
+            previewValue={
+              settings.favicon_url?.startsWith('/uploads/')
+                ? `${apiBaseUrl}${settings.favicon_url}`
+                : settings.favicon_url
+            }
+            value={settings.favicon_url}
+            onUpload={handleImageUpload}
+            onChange={handleSettingChange}
+          />
         </div>
 
         <div className="mt-8">
           <h4 className="mb-4 text-lg font-bold text-slate-900">Auth Dialog Images</h4>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <div>
-              <label htmlFor="authLoginImageUrl" className="text-sm font-semibold text-slate-700">
-                Login Image
-              </label>
-              <div className="relative mt-2 rounded-lg border-2 border-dashed border-primary/15 bg-white p-8 text-center">
-                {settings.authLoginImageUrl ? (
-                  <img
-                    src={settings.authLoginImageUrl}
-                    alt="Login Preview"
-                    className="mx-auto h-28 w-full rounded-md object-cover"
-                  />
-                ) : (
-                  <>
-                    <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/5">
-                      <Icon name="upload_file" className="h-6 w-6 text-slate-500" />
-                    </div>
-                    <p className="text-sm text-slate-500">Upload or paste login image URL</p>
-                  </>
-                )}
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="absolute inset-0 cursor-pointer opacity-0"
-                  onChange={(event) => handleImageUpload('authLoginImageUrl', event.target.files?.[0])}
-                />
-              </div>
-              <input
-                id="authLoginImageUrl"
-                type="url"
-                className="admin-input mt-3 px-4 py-2"
-                placeholder="https://..."
-                value={settings.authLoginImageUrl}
-                onChange={(event) =>
-                  setSettings({ ...settings, authLoginImageUrl: event.target.value })
-                }
-              />
-            </div>
+            <ImageUploadField
+              field="auth_login_image_url"
+              label="Login Image"
+              alt="Login Preview"
+              placeholder="https://..."
+              emptyText="Upload or paste login image URL"
+              previewValue={
+                settings.auth_login_image_url?.startsWith('/uploads/')
+                  ? `${apiBaseUrl}${settings.auth_login_image_url}`
+                  : settings.auth_login_image_url
+              }
+              value={settings.auth_login_image_url}
+              onUpload={handleImageUpload}
+              onChange={handleSettingChange}
+            />
 
-            <div>
-              <label htmlFor="authSignupImageUrl" className="text-sm font-semibold text-slate-700">
-                Signup Image
-              </label>
-              <div className="relative mt-2 rounded-lg border-2 border-dashed border-primary/15 bg-white p-8 text-center">
-                {settings.authSignupImageUrl ? (
-                  <img
-                    src={settings.authSignupImageUrl}
-                    alt="Signup Preview"
-                    className="mx-auto h-28 w-full rounded-md object-cover"
-                  />
-                ) : (
-                  <>
-                    <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/5">
-                      <Icon name="upload_file" className="h-6 w-6 text-slate-500" />
-                    </div>
-                    <p className="text-sm text-slate-500">Upload or paste signup image URL</p>
-                  </>
-                )}
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="absolute inset-0 cursor-pointer opacity-0"
-                  onChange={(event) => handleImageUpload('authSignupImageUrl', event.target.files?.[0])}
-                />
-              </div>
-              <input
-                id="authSignupImageUrl"
-                type="url"
-                className="admin-input mt-3 px-4 py-2"
-                placeholder="https://..."
-                value={settings.authSignupImageUrl}
-                onChange={(event) =>
-                  setSettings({ ...settings, authSignupImageUrl: event.target.value })
-                }
-              />
-            </div>
+            <ImageUploadField
+              field="auth_signup_image_url"
+              label="Signup Image"
+              alt="Signup Preview"
+              placeholder="https://..."
+              emptyText="Upload or paste signup image URL"
+              previewValue={
+                settings.auth_signup_image_url?.startsWith('/uploads/')
+                  ? `${apiBaseUrl}${settings.auth_signup_image_url}`
+                  : settings.auth_signup_image_url
+              }
+              value={settings.auth_signup_image_url}
+              onUpload={handleImageUpload}
+              onChange={handleSettingChange}
+            />
           </div>
+        </div>
+
+        <div className="mt-6 flex justify-end">
+          <button
+            type="button"
+            onClick={handleSaveSettings}
+            disabled={loading}
+            className="rounded bg-primary px-4 py-2 text-sm font-bold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {loading ? 'Saving...' : 'Save Branding'}
+          </button>
         </div>
       </section>
 
@@ -184,51 +234,7 @@ function AdminSettingsPage() {
 
       <section className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         <article>
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <h3 className="text-xl font-bold">Social Media Links</h3>
-            <button
-              type="button"
-              onClick={handleAddSocialLink}
-              className="inline-flex items-center gap-2 rounded border border-primary/20 px-3 py-1.5 text-xs font-bold text-primary transition-colors hover:bg-primary/5"
-            >
-              <Icon name="add" className="h-4 w-4" />
-              Add Platform
-            </button>
-          </div>
-          <div className="space-y-3">
-            {socialLinks.map((item) => (
-              <div key={item.id} className="flex items-start gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded bg-slate-100">
-                  <Icon name="public" className="h-5 w-5 text-slate-600" />
-                </div>
-                <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-[180px_minmax(0,1fr)_auto]">
-                  <input
-                    type="text"
-                    value={item.platform}
-                    onChange={(event) => handleSocialLinkChange(item.id, 'platform', event.target.value)}
-                    placeholder="Platform Name"
-                    className="admin-input px-4 py-2"
-                  />
-                  <input
-                    type="text"
-                    value={item.url}
-                    onChange={(event) => handleSocialLinkChange(item.id, 'url', event.target.value)}
-                    placeholder={item.platform ? `${item.platform} URL` : 'Platform URL'}
-                    className="admin-input px-4 py-2"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveSocialLink(item.id)}
-                    className="inline-flex h-10 items-center justify-center rounded border border-primary/20 px-3 text-slate-500 transition-colors hover:bg-primary/5 hover:text-primary"
-                    aria-label={`Remove ${item.platform || 'social media'} link`}
-                    title="Remove platform"
-                  >
-                    <Icon name="delete" className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+          <SocialLinksEditor variant="admin" />
         </article>
 
         <article>

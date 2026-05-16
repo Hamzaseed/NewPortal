@@ -5,7 +5,7 @@ export default {
     extend: {
       colors: {
         primary: '#000000',
-        'background-light': '#f8f6f6',
+        'background-light': '#ffffff',
         'background-dark': '#201212',
       },
       fontFamily: {

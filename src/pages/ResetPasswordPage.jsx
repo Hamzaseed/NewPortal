@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Eye, EyeOff } from 'lucide-react'
+import { Helmet } from 'react-helmet-async'
 import { toast } from 'sonner'
 import Footer from '../components/layout/Footer'
 import { Button } from '../components/ui/button'
@@ -11,10 +12,9 @@ import { useAuth } from '../context/AuthContext'
 function ResetPasswordPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const { user, resetPassword, changePassword, loading } = useAuth()
+  const { resetPassword, loading } = useAuth()
 
   const token = useMemo(() => searchParams.get('token')?.trim() || '', [searchParams])
-  const isChangePasswordMode = Boolean(user) && !token
 
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -24,7 +24,7 @@ function ResetPasswordPage() {
   const handleSubmit = async (event) => {
     event.preventDefault()
 
-    if (!token && !isChangePasswordMode) {
+    if (!token) {
       toast.error('Invalid or missing reset token')
       return
     }
@@ -45,20 +45,15 @@ function ResetPasswordPage() {
     }
 
     try {
-      if (isChangePasswordMode) {
-        await changePassword(password)
-        toast.success('Password updated successfully.')
-      } else {
-        await resetPassword(token, password)
-        toast.success('Password updated successfully. Please log in.')
+      await resetPassword(token, password)
+      toast.success('Password updated successfully. Please log in.')
 
-        try {
-          const url = new URL(window.location.href)
-          url.searchParams.delete('token')
-          window.history.replaceState({}, '', url.toString())
-        } catch {
-          // Ignore URL cleanup failures.
-        }
+      try {
+        const url = new URL(window.location.href)
+        url.searchParams.delete('token')
+        window.history.replaceState({}, '', url.toString())
+      } catch {
+        // Ignore URL cleanup failures.
       }
 
       navigate('/newsroom')
@@ -67,9 +62,13 @@ function ResetPasswordPage() {
     }
   }
 
-  if (!token && !isChangePasswordMode) {
+  if (!token) {
     return (
       <div className="flex min-h-screen flex-col bg-background-light text-slate-900">
+        <Helmet>
+          <meta name="robots" content="noindex, nofollow" />
+        </Helmet>
+
         <main className="flex flex-1 items-center justify-center px-4 py-10 sm:py-16">
           <div className="w-full max-w-md border border-slate-200 bg-white p-8 shadow-sm">
             <div className="text-center">
@@ -92,16 +91,16 @@ function ResetPasswordPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background-light text-slate-900">
+      <Helmet>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
+
       <main className="flex flex-1 items-center justify-center px-4 py-10 sm:py-16">
         <div className="w-full max-w-md border border-slate-200 bg-white p-8 shadow-sm">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-slate-900">
-              {isChangePasswordMode ? 'Change Your Password' : 'Reset Your Password'}
-            </h1>
+            <h1 className="text-2xl font-bold text-slate-900">Reset Your Password</h1>
             <p className="mt-3 text-sm leading-6 text-slate-500">
-              {isChangePasswordMode
-                ? 'Enter your new password below to update your account.'
-                : 'Enter your new password below.'}
+              Enter your new password below.
             </p>
           </div>
 
@@ -160,11 +159,7 @@ function ResetPasswordPage() {
             </div>
 
             <Button type="submit" disabled={loading} className="h-11 w-full">
-              {loading
-                ? 'Updating...'
-                : isChangePasswordMode
-                  ? 'Change Password'
-                  : 'Reset Password'}
+              {loading ? 'Updating...' : 'Reset Password'}
             </Button>
 
             <Button

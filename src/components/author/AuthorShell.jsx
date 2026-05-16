@@ -1,8 +1,8 @@
-import { useMemo, useRef, useState } from 'react'
+import { useState } from 'react'
+import { Helmet } from 'react-helmet-async'
 import { useSearch } from '../../context/SearchContext'
 import { useAuth } from '../../context/AuthContext'
-import { authorNavItems, authorProfile } from '../../data/authorData'
-import useItalicizeNumbers from '../../hooks/useItalicizeNumbers'
+import { AUTHOR_NAV_ITEMS } from '../../constants/navigation'
 import { AppLink, AppNavLink } from '../ui/AppLink'
 import Icon from '../ui/Icon'
 import ProfileMenu from '../ui/ProfileMenu'
@@ -14,28 +14,30 @@ function navClass(isActive) {
   ].join(' ')
 }
 
-function getDisplayUser(user) {
-  if (!user) return authorProfile
-
-  return {
-    ...authorProfile,
-    name: `${user.first_name ?? ''} ${user.last_name ?? ''}`.trim() || authorProfile.name,
-    role: user.role === 'author' ? 'Author Workspace' : authorProfile.role,
-    email: user.email ?? authorProfile.email,
-  }
-}
-
 function AuthorShell({ eyebrow, title, description, actions, children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const shellRef = useRef(null)
   const { openSearch } = useSearch()
   const { user, logout } = useAuth()
-  const displayUser = useMemo(() => getDisplayUser(user), [user])
-
-  useItalicizeNumbers(shellRef)
+  const displayUser = !user
+    ? {
+        name: 'Author',
+        role: 'Author Workspace',
+        email: '',
+        avatar: '',
+      }
+    : {
+        name: `${user.first_name ?? ''} ${user.last_name ?? ''}`.trim() || 'Author',
+        role: user.role === 'author' ? 'Author Workspace' : 'Editorial Workspace',
+        email: user.email ?? '',
+        avatar: user.avatar || '',
+      }
 
   return (
-    <div ref={shellRef} className="cms-shell flex min-h-screen w-full bg-white font-display text-slate-900">
+    <div className="cms-shell flex min-h-screen w-full bg-white font-display text-slate-900">
+      <Helmet>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
+
       <button
         type="button"
         aria-label="Close sidebar"
@@ -48,7 +50,7 @@ function AuthorShell({ eyebrow, title, description, actions, children }) {
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="flex items-center justify-between gap-3 p-6 lg:justify-start">
+        <header className="flex items-center justify-between gap-3 p-6 lg:justify-start">
           <div className="flex items-center">
             <div className="flex flex-col">
               <h1 className="text-lg font-bold leading-tight">Editorial Desk</h1>
@@ -59,10 +61,10 @@ function AuthorShell({ eyebrow, title, description, actions, children }) {
           <button type="button" onClick={() => setSidebarOpen(false)} className="cms-round rounded-full p-1 text-slate-300 hover:bg-white/10 lg:hidden">
             <Icon name="close" className="h-5 w-5" />
           </button>
-        </div>
+        </header>
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-4">
-          {authorNavItems.map((item) => (
+          {AUTHOR_NAV_ITEMS.map((item) => (
             <AppNavLink key={item.label} to={item.path} onClick={() => setSidebarOpen(false)} className={({ isActive }) => navClass(isActive)}>
               <item.icon className="h-5 w-5" />
               <span className="text-sm font-medium">{item.label}</span>
@@ -70,15 +72,17 @@ function AuthorShell({ eyebrow, title, description, actions, children }) {
           ))}
         </nav>
 
-        <div className="border-t border-slate-700 p-4">
-          <AppLink
-            to="/author/articles/new"
-            onClick={() => setSidebarOpen(false)}
-            className="mb-3 flex items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-primary/90"
-          >
-            <Icon name="add" className="h-4 w-4" />
-            New Article
-          </AppLink>
+        <footer className="border-t border-slate-700 p-4">
+          <div className="mb-3 grid gap-2">
+            <AppLink
+              to="/author/articles/new"
+              onClick={() => setSidebarOpen(false)}
+              className="flex items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-primary/90"
+            >
+              <Icon name="add" className="h-4 w-4" />
+              New Article
+            </AppLink>
+          </div>
 
           <AppLink
             to="/newsroom"
@@ -105,7 +109,7 @@ function AuthorShell({ eyebrow, title, description, actions, children }) {
             <Icon name="logout" className="h-4 w-4" />
             Logout
           </button>
-        </div>
+        </footer>
       </aside>
 
       <main className="flex min-w-0 flex-1 flex-col overflow-visible bg-white">
@@ -158,14 +162,14 @@ function AuthorShell({ eyebrow, title, description, actions, children }) {
         </header>
 
         <div className="flex-1 overflow-y-auto bg-white p-4 sm:p-6 lg:p-8">
-          <section className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <header className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-primary">{eyebrow}</p>
               <h1 className="mt-1 text-xl font-bold sm:text-2xl">{title}</h1>
               <p className="mt-1 text-xs text-slate-500 sm:text-sm">{description}</p>
             </div>
             {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
-          </section>
+          </header>
 
           {children}
         </div>

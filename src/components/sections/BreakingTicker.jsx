@@ -1,7 +1,9 @@
-import { breakingNews } from '../../data/newsData'
+function BreakingTicker({ items = [] }) {
+  const tickerItems = items.length > 1 ? [...items, ...items] : items
 
-function BreakingTicker() {
-  const items = [...breakingNews, ...breakingNews]
+  if (items.length === 0) {
+    return null
+  }
 
   return (
     <div className="overflow-hidden border-b border-primary/10 bg-white">
@@ -11,7 +13,7 @@ function BreakingTicker() {
         </span>
         <div className="overflow-hidden">
           <div className="flex min-w-max animate-marquee items-center text-sm font-medium text-slate-700">
-            {items.map((story, index) => (
+            {tickerItems.map((story, index) => (
               <p
                 key={`${story}-${index}`}
                 className={index === 0 ? 'px-4' : 'border-l border-primary/20 px-4'}

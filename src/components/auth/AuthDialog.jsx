@@ -1,18 +1,18 @@
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
-import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
-import { AnimatePresence, motion } from 'motion/react'
-import { Eye, EyeOff, Mail, X } from 'lucide-react'
+import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
+import { DialogPortal, DialogOverlay } from '../ui/dialog'
+import { X, Mail, Eye, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
+import { fetchSettings } from '../../../app/settings/settingSlice'
 import { useAuth } from '../../context/AuthContext'
-import { DialogOverlay, DialogPortal } from '../ui/dialog'
-import { Button } from '../ui/button'
-import { Input } from '../ui/input'
-import { Label } from '../ui/label'
 
-function AuthDialog({ open, onOpenChange, initialMode = 'login' }) {
-  const navigate = useNavigate()
+function AuthDialog({
+  open,
+  onOpenChange,
+  initialMode = 'login',
+}) {
   const [mode, setMode] = useState(initialMode)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -23,31 +23,32 @@ function AuthDialog({ open, onOpenChange, initialMode = 'login' }) {
     first_name: '',
     last_name: '',
   })
+  const dispatch = useDispatch()
+  const navigate = useNavigate()
+  const settings = useSelector((state) => state.settings.settings)
+  const { login, signup } = useAuth()
+  const apiBaseUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 
-  const { login, signup, loading } = useAuth()
+  useEffect(() => {
+    if (!open) {
+      return
+    }
+
+    setMode(initialMode)
+    setShowPassword(false)
+    setShowConfirmPassword(false)
+  }, [open, initialMode])
 
   useEffect(() => {
     if (open) {
-      setMode(initialMode)
-      setShowPassword(false)
-      setShowConfirmPassword(false)
+      dispatch(fetchSettings())
     }
-  }, [open, initialMode])
+  }, [dispatch, open])
 
   const toggleMode = () => {
-    setMode((prev) => (prev === 'login' ? 'signup' : 'login'))
+    setMode((currentMode) => (currentMode === 'login' ? 'signup' : 'login'))
     setShowPassword(false)
     setShowConfirmPassword(false)
-  }
-
-  const resetForm = () => {
-    setFormData({
-      email: '',
-      password: '',
-      confirmPassword: '',
-      first_name: '',
-      last_name: '',
-    })
   }
 
   const handleSubmit = async (event) => {
@@ -75,249 +76,243 @@ function AuthDialog({ open, onOpenChange, initialMode = 'login' }) {
       onOpenChange(false)
       setShowPassword(false)
       setShowConfirmPassword(false)
-      resetForm()
+      setFormData({
+        email: '',
+        password: '',
+        confirmPassword: '',
+        first_name: '',
+        last_name: '',
+      })
     } catch (err) {
       toast.error(err?.message || 'Something went wrong')
     }
   }
 
   const fallbackLoginImage =
-    'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1200&q=80'
+    'https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&fit=crop&w=1200&q=80'
   const fallbackSignupImage =
-    'https://images.unsplash.com/photo-1621761191319-c6fb62004040?auto=format&fit=crop&w=1200&q=80'
+    'https://images.unsplash.com/photo-1518186285589-2f7649de83e0?auto=format&fit=crop&w=1200&q=80'
+  const authImageSrc =
+    mode === 'login'
+      ? settings?.auth_login_image_url?.trim()
+        ? settings.auth_login_image_url.startsWith('/uploads/')
+          ? `${apiBaseUrl}${settings.auth_login_image_url}`
+          : settings.auth_login_image_url
+        : fallbackLoginImage
+      : settings?.auth_signup_image_url?.trim()
+        ? settings.auth_signup_image_url.startsWith('/uploads/')
+          ? `${apiBaseUrl}${settings.auth_signup_image_url}`
+          : settings.auth_signup_image_url
+        : fallbackSignupImage
 
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPortal>
-        <DialogOverlay className="fixed inset-0 bg-black/50 z-40" />
+        <DialogOverlay className="fixed inset-0 z-[140] bg-black/50" />
 
         <DialogPrimitive.Content
           className="
-            fixed top-1/2 left-1/2 z-50
+            fixed left-1/2 top-1/2 z-[150]
+            max-h-[90vh] w-[calc(100vw-1.5rem)] max-w-4xl
             -translate-x-1/2 -translate-y-1/2
-            w-full max-w-4xl
-            min-h-[520px]
-            max-h-[90vh]
-            bg-white rounded-none shadow-2xl
-            overflow-hidden
-            grid md:grid-cols-2
+            overflow-y-auto rounded-none bg-white shadow-2xl
+            md:grid md:min-h-[520px] md:grid-cols-2 md:overflow-hidden
           "
         >
-          <VisuallyHidden>
-            <DialogPrimitive.Title>
-              {mode === 'login' ? 'Sign in to your account' : 'Create a new account'}
-            </DialogPrimitive.Title>
-            <DialogPrimitive.Description>
-              {mode === 'login'
-                ? 'Enter your email and password to sign in.'
-                : 'Fill out the form to create an account.'}
-            </DialogPrimitive.Description>
-          </VisuallyHidden>
-
           <div className="relative min-h-[240px] md:min-h-[520px]">
-            <AnimatePresence mode="wait">
-              <motion.img
-                key={mode}
-                src={mode === 'login' ? fallbackLoginImage : fallbackSignupImage}
-                alt="Auth Visual"
-                className="absolute inset-0 w-full h-full object-cover"
-                loading="lazy"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.4 }}
-              />
-            </AnimatePresence>
+            <img
+              key={mode}
+              src={authImageSrc}
+              alt="Auth Visual"
+              className="absolute inset-0 h-full w-full object-cover"
+              loading="lazy"
+            />
 
             <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-transparent" />
 
-            <div className="absolute bottom-10 left-10 right-10 text-white">
-              <h3 className="text-3xl font-serif tracking-wide mb-2">
+            <div className="absolute bottom-6 left-6 right-6 text-white md:bottom-10 md:left-10 md:right-10">
+              <h3 className="mb-2 font-serif text-2xl tracking-wide md:text-3xl">
                 {mode === 'login' ? 'WELCOME BACK' : 'JOIN US'}
               </h3>
               <p className="text-xs uppercase tracking-widest">
-                {mode === 'login' ? 'Discover timeless elegance' : 'Luxury crafted for you'}
+                {mode === 'login'
+                  ? ' Rediscover your inspiration '
+                  : ' Unleash your creativity '}
               </p>
             </div>
           </div>
 
-          <div className="relative p-6 md:p-10 flex items-center justify-center">
+          <div className="relative flex items-center justify-center bg-white p-6 text-slate-900 md:p-10">
             <button
+              type="button"
               onClick={() => onOpenChange(false)}
-              className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100"
+              className="absolute right-4 top-4 rounded-none p-2 hover:bg-gray-100"
+              aria-label="Close dialog"
             >
               <X className="h-5 w-5" />
             </button>
 
-            <div className="w-full max-w-sm">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={mode}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <h2 className="text-3xl font-serif text-center mb-2">
-                    {mode === 'login' ? 'SIGN IN' : 'CREATE ACCOUNT'}
-                  </h2>
-                  <p className="text-center text-xs uppercase tracking-widest text-gray-500 mb-6">
-                    {mode === 'login' ? 'Enter your credentials' : 'Start your journey'}
-                  </p>
+            <div className="w-full max-w-sm rounded-none border border-slate-200 bg-[#fafafa] p-5">
+              <h2 className="mb-2 text-center font-serif text-3xl text-slate-950">
+                {mode === 'login' ? 'SIGN IN' : 'CREATE ACCOUNT'}
+              </h2>
+              <p className="mb-6 text-center text-xs uppercase tracking-widest text-gray-500">
+                {mode === 'login'
+                  ? 'Enter your credentials'
+                  : 'Start your journey'}
+              </p>
 
-                  <form className="space-y-4" onSubmit={handleSubmit}>
-                    {mode === 'signup' ? (
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <Label className="text-xs uppercase">First Name</Label>
-                          <Input
-                            value={formData.first_name}
-                            onChange={(e) =>
-                              setFormData({ ...formData, first_name: e.target.value })
-                            }
-                            className="border-gray-300 focus:ring-0 focus:border-gray-400"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs uppercase">Last Name</Label>
-                          <Input
-                            value={formData.last_name}
-                            onChange={(e) =>
-                              setFormData({ ...formData, last_name: e.target.value })
-                            }
-                            className="border-gray-300 focus:ring-0 focus:border-gray-400"
-                            required
-                          />
-                        </div>
-                      </div>
-                    ) : null}
-
+              <form className="space-y-4" onSubmit={handleSubmit}>
+                {mode === 'signup' ? (
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div>
-                      <Label className="text-xs uppercase">Email</Label>
-                      <Input
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="border-gray-300 focus:ring-0 focus:border-gray-400"
+                      <label className="mb-1 inline-block text-xs font-medium uppercase text-slate-700">First Name</label>
+                      <input
+                        value={formData.first_name}
+                        onChange={(event) =>
+                          setFormData({ ...formData, first_name: event.target.value })
+                        }
+                        className="h-10 w-full rounded-none border border-slate-400 bg-white px-3 py-2 text-sm text-slate-900 outline-none"
                         required
                       />
                     </div>
-
                     <div>
-                      <Label className="text-xs uppercase">Password</Label>
-                      <div className="relative">
-                        <Input
-                          type={showPassword ? 'text' : 'password'}
-                          value={formData.password}
-                          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                          className="border-gray-300 focus:ring-0 focus:border-gray-400 pr-10"
-                          required
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword((prev) => !prev)}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-gray-100"
-                          aria-label={showPassword ? 'Hide password' : 'Show password'}
-                        >
-                          {showPassword ? (
-                            <EyeOff className="h-4 w-4 text-gray-600" />
-                          ) : (
-                            <Eye className="h-4 w-4 text-gray-600" />
-                          )}
-                        </button>
-                      </div>
-
-                      {mode === 'login' ? (
-                        <div className="mt-2 flex items-center justify-between">
-                          <button
-                            type="button"
-                            className="text-xs uppercase tracking-widest text-gray-600 hover:text-gray-900"
-                            onClick={() => {
-                              onOpenChange(false)
-                              navigate('/forgot-password')
-                            }}
-                          >
-                            Forgot password?
-                          </button>
-                        </div>
-                      ) : null}
+                      <label className="mb-1 inline-block text-xs font-medium uppercase text-slate-700">Last Name</label>
+                      <input
+                        value={formData.last_name}
+                        onChange={(event) =>
+                          setFormData({ ...formData, last_name: event.target.value })
+                        }
+                        className="h-10 w-full rounded-none border border-slate-400 bg-white px-3 py-2 text-sm text-slate-900 outline-none"
+                        required
+                      />
                     </div>
+                  </div>
+                ) : null}
 
-                    {mode === 'signup' ? (
-                      <div>
-                        <Label className="text-xs uppercase">Confirm Password</Label>
-                        <div className="relative">
-                          <Input
-                            type={showConfirmPassword ? 'text' : 'password'}
-                            value={formData.confirmPassword}
-                            onChange={(e) =>
-                              setFormData({ ...formData, confirmPassword: e.target.value })
-                            }
-                            className="border-gray-300 focus:ring-0 focus:border-gray-400 pr-10"
-                            required
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowConfirmPassword((prev) => !prev)}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-gray-100"
-                            aria-label={
-                              showConfirmPassword
-                                ? 'Hide password confirmation'
-                                : 'Show password confirmation'
-                            }
-                          >
-                            {showConfirmPassword ? (
-                              <EyeOff className="h-4 w-4 text-gray-600" />
-                            ) : (
-                              <Eye className="h-4 w-4 text-gray-600" />
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                    ) : null}
+                <div>
+                  <label className="mb-1 inline-block text-xs font-medium uppercase text-slate-700">Email</label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(event) =>
+                      setFormData({ ...formData, email: event.target.value })
+                    }
+                    className="h-10 w-full rounded-none border border-slate-400 bg-white px-3 py-2 text-sm text-slate-900 outline-none"
+                    required
+                  />
+                </div>
 
-                    <Button
-                      type="submit"
-                      className="w-full h-12 border border-black uppercase tracking-widest"
-                      disabled={loading}
+                <div>
+                  <label className="mb-1 inline-block text-xs font-medium uppercase text-slate-700">Password</label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={formData.password}
+                      onChange={(event) =>
+                        setFormData({ ...formData, password: event.target.value })
+                      }
+                      className="h-10 w-full rounded-none border border-slate-400 bg-white px-3 py-2 pr-10 text-sm text-slate-900 outline-none"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((value) => !value)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 hover:bg-gray-100"
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
                     >
-                      {loading
-                        ? 'Please wait...'
-                        : mode === 'login'
-                          ? 'Sign In'
-                          : 'Create Account'}
-                    </Button>
-                  </form>
-
-                  <div className="my-6 relative">
-                    <div className="border-t" />
-                    <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-white px-3 text-xs uppercase text-gray-500">
-                      Or
-                    </span>
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4 text-gray-600" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-gray-600" />
+                      )}
+                    </button>
                   </div>
 
-                  <Button
-                    variant="outline"
-                    className="w-full h-12 flex gap-2 uppercase"
-                    onClick={() => toast.success('Google Sign-in')}
-                  >
-                    <Mail className="h-4 w-4" />
-                    Continue with Google
-                  </Button>
+                  {mode === 'login' ? (
+                    <div className="mt-2 flex items-center justify-between">
+                      <button
+                        type="button"
+                        className="text-xs uppercase tracking-widest text-gray-600 hover:text-gray-900"
+                        onClick={() => {
+                          onOpenChange(false)
+                          navigate('/forgot-password')
+                        }}
+                      >
+                        Forgot password?
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
 
-                  <p className="mt-4 text-center text-xs uppercase text-gray-600">
-                    {mode === 'login' ? "Don't have an account?" : 'Already have an account?'}
-                    <button
-                      className="ml-2 text-primary"
-                      type="button"
-                      onClick={toggleMode}
-                    >
-                      {mode === 'login' ? 'Sign Up' : 'Sign In'}
-                    </button>
-                  </p>
-                </motion.div>
-              </AnimatePresence>
+                {mode === 'signup' ? (
+                  <div>
+                    <label className="mb-1 inline-block text-xs font-medium uppercase text-slate-700">Confirm Password</label>
+                    <div className="relative">
+                      <input
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        value={formData.confirmPassword}
+                        onChange={(event) =>
+                          setFormData({
+                            ...formData,
+                            confirmPassword: event.target.value,
+                          })
+                        }
+                        className="h-10 w-full rounded-none border border-slate-400 bg-white px-3 py-2 pr-10 text-sm text-slate-900 outline-none"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword((value) => !value)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 hover:bg-gray-100"
+                        aria-label={showConfirmPassword ? 'Hide password confirmation' : 'Show password confirmation'}
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-4 w-4 text-gray-600" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-gray-600" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+
+                <button
+                  type="submit"
+                  className="h-12 w-full rounded-none border border-black bg-black px-4 text-sm font-medium uppercase tracking-widest text-white"
+                >
+                  {mode === 'login' ? 'Sign In' : 'Create Account'}
+                </button>
+              </form>
+
+              <div className="relative my-6">
+                <div className="border-t" />
+                <span className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 bg-white px-3 text-xs uppercase text-gray-500">
+                  Or
+                </span>
+              </div>
+
+              <button
+                type="button"
+                className="flex h-12 w-full items-center justify-center gap-2 rounded-none border border-slate-400 bg-white px-4 text-sm font-medium uppercase text-slate-900"
+                onClick={() => toast.success('Google Sign-in')}
+              >
+                <Mail className="h-4 w-4" />
+                Continue with Google
+              </button>
+
+              <p className="mt-4 text-center text-xs uppercase text-gray-600">
+                {mode === 'login'
+                  ? "Don't have an account?"
+                  : 'Already have an account?'}
+                <button
+                  className="ml-2 text-primary"
+                  type="button"
+                  onClick={toggleMode}
+                >
+                  {mode === 'login' ? 'Sign Up' : 'Sign In'}
+                </button>
+              </p>
             </div>
           </div>
         </DialogPrimitive.Content>

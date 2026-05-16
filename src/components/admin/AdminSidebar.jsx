@@ -1,4 +1,5 @@
-import { adminNavItems, profile } from '../../data/adminData'
+import { useAuth } from '../../context/AuthContext'
+import { ADMIN_NAV_ITEMS } from '../../constants/navigation'
 import { AppLink, AppNavLink } from '../ui/AppLink'
 import Icon from '../ui/Icon'
 
@@ -12,6 +13,11 @@ function navClass(isActive) {
 }
 
 function AdminSidebar({ isOpen = false, onClose }) {
+  const { user } = useAuth()
+  const displayName = `${user?.first_name ?? ''} ${user?.last_name ?? ''}`.trim() || 'Admin'
+  const displayRole = user?.role || 'Administrator'
+  const avatar = user?.avatar || ''
+
   return (
     <>
       <button
@@ -26,7 +32,7 @@ function AdminSidebar({ isOpen = false, onClose }) {
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="flex items-center justify-between gap-3 p-6 lg:justify-start">
+        <header className="flex items-center justify-between gap-3 p-6 lg:justify-start">
           <div className="flex items-center">
             <div className="flex flex-col">
               <h1 className="text-lg font-bold leading-tight">Editorial</h1>
@@ -37,25 +43,25 @@ function AdminSidebar({ isOpen = false, onClose }) {
           <button type="button" onClick={onClose} className="cms-round rounded-full p-1 text-slate-300 hover:bg-white/10 lg:hidden">
             <Icon name="close" className="h-5 w-5" />
           </button>
-        </div>
+        </header>
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-4">
-          {adminNavItems.map((item) => (
+          {ADMIN_NAV_ITEMS.map((item) => (
             <AppNavLink key={item.label} to={item.path} onClick={onClose} className={({ isActive }) => navClass(isActive)}>
               <Icon name={item.key} className="h-5 w-5" />
               <span className="text-sm font-medium">{item.label}</span>
             </AppNavLink>
           ))}
 
-          <div className="mt-4 border-t border-slate-700 pt-4">
+          <section className="mt-4 border-t border-slate-700 pt-4" aria-label="Sidebar settings">
             <AppNavLink to="/admin/settings" onClick={onClose} className={({ isActive }) => navClass(isActive)}>
               <Icon name="settings" className="h-5 w-5" />
               <span className="text-sm font-medium">Settings</span>
             </AppNavLink>
-          </div>
+          </section>
         </nav>
 
-        <div className="border-t border-slate-700 p-4">
+        <footer className="border-t border-slate-700 p-4">
           <AppLink
             to="/newsroom"
             onClick={onClose}
@@ -66,13 +72,13 @@ function AdminSidebar({ isOpen = false, onClose }) {
           </AppLink>
 
           <div className="flex items-center gap-3 px-2">
-            <div className="h-8 w-8 rounded-full border border-primary/30 bg-primary/20 bg-cover bg-center" style={{ backgroundImage: `url(${profile.avatar})` }} />
+            <div className="h-8 w-8 rounded-full border border-primary/30 bg-primary/20 bg-cover bg-center" style={{ backgroundImage: avatar ? `url(${avatar})` : 'none' }} />
             <div className="flex min-w-0 flex-col">
-              <p className="truncate text-sm font-medium">{profile.name}</p>
-              <p className="truncate text-[10px] uppercase tracking-wider text-slate-400">{profile.role}</p>
+              <p className="truncate text-sm font-medium">{displayName}</p>
+              <p className="truncate text-[10px] uppercase tracking-wider text-slate-400">{displayRole}</p>
             </div>
           </div>
-        </div>
+        </footer>
       </aside>
     </>
   )

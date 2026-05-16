@@ -1,14 +1,6 @@
 ﻿import { categoryArticlePool } from './categoryData'
 import { heroStory, latestArticles, topStories } from './newsData'
 
-export function toArticleSlug(title) {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .trim()
-    .replace(/\s+/g, '-')
-}
-
 const defaultArticle = {
   category: 'Climate',
   title: 'Hidden Gems: The Coastal Villages Untouched by Tourism',
@@ -64,8 +56,80 @@ const defaultArticle = {
         'https://lh3.googleusercontent.com/aida-public/AB6AXuCmYcnby0TOrDhi-_orvkwnAUxElIk0La9RgymX17mWLDyBT1B9EgBGm0oqD-A6peVx-yIJxCuWr55C7rx9bTbYEFkdkpfK47aCFn3Jx5d5BEJTPEGh_IA-ZeJD1dKBofpTLxDfyvyCzxaHjrUGM9YRdxY2B_NM3lByqfdtrYUT-AkBPRmtRUlxA8S-PbOlWniUI_A1gLBBHXOte9zqD0kWqGpxhDn2ccF8sGyPTZeD7-wkoX1nHJiRcAeA4MrwpcISaJ5d1YXsM2k',
       alt: 'Kayaker on a crystal clear lake surrounded by mountains',
     },
+    {
+      title: 'Restoring Ancient Forest Paths for Modern Hikers',
+      meta: 'Outdoors | 7 min read',
+      image:
+        'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1200&q=80',
+      alt: 'Sunlit forest trail through tall trees',
+    },
+    {
+      title: 'How Small Islands Are Reinventing Coastal Protection',
+      meta: 'Climate | 8 min read',
+      image:
+        'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80',
+      alt: 'Coastline with blue water and protective sea barrier',
+    },
+    {
+      title: 'A New Generation of Slow-Travel Rail Journeys',
+      meta: 'Travel | 5 min read',
+      image:
+        'https://images.unsplash.com/photo-1474487548417-781cb71495f3?auto=format&fit=crop&w=1200&q=80',
+      alt: 'Train passing through a scenic mountain landscape',
+    },
   ],
 }
+
+defaultArticle.contentBlocks = [
+  {
+    type: 'paragraph',
+    content: defaultArticle.intro,
+  },
+  ...defaultArticle.paragraphs.map((paragraph) => ({
+    type: 'paragraph',
+    content: paragraph,
+  })),
+  {
+    type: 'quote',
+    content: defaultArticle.quote,
+  },
+  {
+    type: 'heading',
+    content: 'Scenes From The Coast',
+  },
+  ...defaultArticle.gallery.map((item) => ({
+    type: 'image',
+    src: item.image,
+    alt: item.alt,
+    caption: item.alt,
+  })),
+  {
+    type: 'heading',
+    content: 'Why These Villages Still Matter',
+  },
+  {
+    type: 'list',
+    items: [
+      'Tourism remains limited and community-led.',
+      'Heritage buildings are still part of everyday life.',
+      'Environmental protection shapes local planning decisions.',
+    ],
+  },
+  {
+    type: 'tweet',
+    url: 'https://twitter.com/example/status/1',
+    content: 'Tweet embed placeholder',
+  },
+  {
+    type: 'paragraph',
+    content: 'For readers planning a slower trip, local reporting and regional guides remain the best way to understand how these communities are changing.',
+  },
+  {
+    type: 'link',
+    href: '/category/travel',
+    label: 'Read more travel coverage',
+  },
+]
 
 const pooledArticles = [
   heroStory,
@@ -73,7 +137,11 @@ const pooledArticles = [
   ...latestArticles,
   ...categoryArticlePool,
 ].map((item) => ({
-  slug: toArticleSlug(item.title),
+  slug: String(item.title || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-'),
   title: item.title,
   category: item.category || item.tag || 'World',
   image: item.image,
@@ -89,21 +157,3 @@ for (const item of pooledArticles) {
 }
 
 export const articleIndex = Array.from(unique.values())
-
-export function getArticleBySlug(slug) {
-  const found = articleIndex.find((item) => item.slug === slug)
-
-  if (!found) {
-    return { ...defaultArticle, slug: toArticleSlug(defaultArticle.title) }
-  }
-
-  return {
-    ...defaultArticle,
-    slug: found.slug,
-    title: found.title,
-    category: found.category,
-    heroImage: found.image || defaultArticle.heroImage,
-    heroAlt: found.alt || defaultArticle.heroAlt,
-    intro: found.excerpt || defaultArticle.intro,
-  }
-}

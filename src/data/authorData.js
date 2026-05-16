@@ -2,7 +2,6 @@ import {
   BookOpen,
   ChartColumn,
   Clock3,
-  DollarSign,
   Eye,
   FileText,
   Heart,
@@ -26,7 +25,6 @@ export const authorNavItems = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/author/dashboard' },
   { label: 'My Articles', icon: BookOpen, path: '/author/articles' },
   { label: 'Analytics', icon: ChartColumn, path: '/author/analytics' },
-  { label: 'Earnings', icon: DollarSign, path: '/author/analytics' },
   { label: 'Settings', icon: Settings, path: '/author/settings' },
 ]
 
@@ -128,34 +126,4 @@ export const authorQuickActions = [
   { label: 'Drafts Waiting Review', value: '07', icon: Clock3 },
   { label: 'New Comments', value: '12', icon: MessageSquare },
   { label: 'Ideas in Backlog', value: '19', icon: Sparkles },
-]
-
-export const analyticsLocations = [
-  { flag: 'US', name: 'United States', pct: 42, tone: 'bg-primary' },
-  { flag: 'UK', name: 'United Kingdom', pct: 18, tone: 'bg-slate-500' },
-  { flag: 'DE', name: 'Germany', pct: 12, tone: 'bg-slate-400' },
-  { flag: 'CA', name: 'Canada', pct: 9, tone: 'bg-slate-300' },
-]
-
-export const performanceRows = [
-  {
-    title: 'The Future of AI Architecture',
-    meta: 'Published 2 days ago | Tech',
-    completion: '84%',
-    engagement: '12.4%',
-    shares: '1,204',
-    trend: 'up',
-    image:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuB69xXDgt5xga4O-Ldzy_Lpxe18vyW6Vi1vCPfefpRpSjNZZvvLPOv0T3FqadBI0g4gU9ULBRjTxLDl9n2fZhm0VOUDkF6dg8536RKP0-gDdkCh1eilLyr0q5PpxfKo3UhSwk8lOdE4wr_BS7IgDhcKewY_mnM4va6H4yusqsH_gu3Pjq02aZ_SC9fX-ClRfvO0aWM7oBFrwPr6XbfbCLyZb_LOQajuT-11gVDZ4KYYRpj50i5e2J1Tag6Fc0cWdJbIg7KMHrzecgM',
-  },
-  {
-    title: 'Digital Minimalism in 2024',
-    meta: 'Published 1 week ago | Lifestyle',
-    completion: '72%',
-    engagement: '8.1%',
-    shares: '856',
-    trend: 'flat',
-    image:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuDQwOdJ3tMXFAOYDhldWVBS6ttO3CSp2GDqkoAOoQJ7lYptuDjk9F5XIcr8KoIO-Zvx2ZbkgQzBWHdjRNyfpYFCGXWmeZcM26oL-79AB6Y6HdkrY-X4hLC01HPmnzlIDYy6KxgHVTewriBi7MLTS1nUuItGw7g6wruqYcxxdRZJuhmQjfhstsDHYTrR9reGTyTzVNM4-1tjPmspYHxp8BB98SPbA-G5hM694329EeFRgVYtjtqhE9EJNOD-PBdO7lCLZUEOvp3wDWs',
-  },
 ]

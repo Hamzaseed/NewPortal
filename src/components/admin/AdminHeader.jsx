@@ -40,13 +40,22 @@ function AdminHeader({ onMenuClick }) {
 
         <ProfileMenu />
 
-        <AppLink
-          to="/admin/articles/new"
-          className="flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-bold text-white transition-all hover:bg-primary/90 sm:px-4"
-        >
-          <Icon name="add" className="h-4 w-4" />
-          <span className="hidden sm:inline">New Article</span>
-        </AppLink>
+        <div className="flex items-center gap-2">
+          <AppLink
+            to="/admin/articles/new"
+            className="flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-bold text-white transition-all hover:bg-primary/90 sm:px-4"
+          >
+            <Icon name="add" className="h-4 w-4" />
+            <span className="hidden sm:inline">New Article</span>
+          </AppLink>
+          <AppLink
+            to="/admin/videos/new"
+            className="flex items-center gap-2 rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm font-bold text-primary transition-all hover:border-primary hover:bg-primary/5 sm:px-4"
+          >
+            <Icon name="play_circle" className="h-4 w-4" />
+            <span className="hidden sm:inline">New Video</span>
+          </AppLink>
+        </div>
       </div>
     </header>
   )

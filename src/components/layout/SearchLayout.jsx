@@ -1,151 +1,16 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo } from 'react'
 import { Search, Sparkles, X } from 'lucide-react'
-import { articleIndex } from '../../data/articleData'
-import { adminNavItems, recentArticles } from '../../data/adminData'
-import { allVideos } from '../../data/videoData'
+import { useDispatch, useSelector } from 'react-redux'
+import { fetchArticles } from '../../../app/articles/articleSlice'
+import { fetchPublicCategories } from '../../../app/categories/categoriesSlice'
+import { fetchVideos } from '../../../app/videos/videoSlice'
+import { ADMIN_NAV_ITEMS, AUTHOR_NAV_ITEMS } from '../../constants/navigation'
+import { useAuth } from '../../context/AuthContext'
 import { AppLink } from '../ui/AppLink'
-
-const authorWorkspaceItems = [
-  {
-    id: 'author-draft-1',
-    type: 'Draft',
-    title: 'The Future of AI in Modern Newsrooms',
-    subtitle: 'Needs headline review and SEO polish',
-    path: '/author/articles',
-  },
-  {
-    id: 'author-articles-1',
-    type: 'Articles',
-    title: 'My Articles',
-    subtitle: 'Manage drafts, scheduled stories and published work',
-    path: '/author/articles',
-  },
-  {
-    id: 'author-analytics-1',
-    type: 'Analytics',
-    title: 'Audience Intelligence',
-    subtitle: 'Top engagement trends from the last 30 days',
-    path: '/author/analytics',
-  },
-  {
-    id: 'author-settings-1',
-    type: 'Settings',
-    title: 'Author Settings',
-    subtitle: 'Profile, publishing defaults and security',
-    path: '/author/settings',
-  },
-  {
-    id: 'author-feedback-1',
-    type: 'Feedback',
-    title: 'Recent Feedback',
-    subtitle: 'Community responses on your latest stories',
-    path: '/author/dashboard',
-  },
-]
+import { useSearch } from '../../context/SearchContext'
 
 const authorShortcuts = ['Drafts', 'Articles', 'Analytics', 'Comments', 'Publishing']
 const siteTopics = ['Politics', 'Tech', 'World', 'Business', 'Opinion', 'Videos']
-
-function buildResults(mode) {
-  const articleResults = articleIndex.slice(0, 6).map((item) => ({
-    id: `article-${item.slug}`,
-    type: 'Article',
-    title: item.title,
-    subtitle: item.category,
-    path: `/news/${item.slug}`,
-  }))
-
-  const videoResults = allVideos.slice(0, 4).map((item) => ({
-    id: `video-${item.slug}`,
-    type: 'Video',
-    title: item.title,
-    subtitle: item.category || 'News',
-    path: `/videos/${item.slug}`,
-  }))
-
-  if (mode === 'admin') {
-    const adminSections = adminNavItems.slice(0, 6).map((item) => ({
-      id: `admin-nav-${item.label}`,
-      type: 'Section',
-      title: item.label,
-      subtitle: 'Admin workspace',
-      path: item.path,
-    }))
-
-    const adminArticles = recentArticles.map((item) => ({
-      id: `admin-article-${item.slug}`,
-      type: 'Article',
-      title: item.title,
-      subtitle: `${item.category} | ${item.status}`,
-      path: '/admin/articles',
-    }))
-
-    return [...adminSections, ...adminArticles]
-  }
-
-  if (mode === 'author') {
-    return [...authorWorkspaceItems, ...articleResults.slice(0, 3)]
-  }
-
-  return [...articleResults, ...videoResults]
-}
-
-function getModeCopy(mode) {
-  if (mode === 'admin') {
-    return {
-      panelClass: 'w-[min(96%,1100px)] border-slate-200 bg-white text-slate-900',
-      inputClass: 'border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:border-primary',
-      closeClass: 'border-slate-200 text-slate-600 hover:bg-slate-100',
-      resultClass: 'border-slate-200 bg-white hover:border-primary/40 hover:bg-primary/5',
-      chipClass: 'bg-slate-100 text-slate-600',
-      emptyClass: 'border-slate-200 bg-slate-50 text-slate-500',
-      eyebrow: 'Admin Search',
-      title: 'Search dashboard areas, articles, authors and workflows',
-      placeholder: 'Search articles, authors, sections or logs...',
-      helper: 'Quick access for newsroom operations and publishing control.',
-    }
-  }
-
-  if (mode === 'author') {
-    return {
-      panelClass: 'w-[min(96%,1040px)] border-primary/10 bg-white text-slate-900',
-      inputClass: 'border-primary/10 bg-background-light text-slate-900 placeholder:text-slate-400 focus:border-primary',
-      closeClass: 'border-slate-200 text-slate-600 hover:bg-slate-100',
-      resultClass: 'border-primary/10 bg-white hover:border-primary/30 hover:bg-primary/[0.03]',
-      chipClass: 'bg-primary/10 text-primary',
-      emptyClass: 'border-primary/10 bg-background-light text-slate-500',
-      eyebrow: 'Author Search',
-      title: 'Search your drafts, analytics and writing workspace',
-      placeholder: 'Search drafts, analytics or comments...',
-      helper: 'Built for editorial flow, personal performance and publishing tools.',
-    }
-  }
-
-  return {
-    panelClass: 'w-[min(96%,1000px)] border-slate-200 bg-white text-slate-900',
-    inputClass: 'border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus:border-primary',
-    closeClass: 'border-slate-200 text-slate-600 hover:bg-slate-100',
-    resultClass: 'border-slate-200 bg-white hover:border-primary/40 hover:bg-primary/5',
-    chipClass: 'bg-slate-100 text-slate-600',
-    emptyClass: 'border-slate-200 bg-white text-slate-500',
-    eyebrow: 'Site Search',
-    title: 'Search news, videos and topics across the site',
-    placeholder: 'Search news, videos, and topics...',
-    helper: 'Explore the newsroom quickly with a clean reader-friendly layout.',
-  }
-}
-
-function filterResults(items, query) {
-  const normalized = query.trim().toLowerCase()
-
-  if (!normalized) {
-    return items.slice(0, 8)
-  }
-
-  return items
-    .filter((item) => item.title.toLowerCase().includes(normalized) || item.subtitle.toLowerCase().includes(normalized))
-    .slice(0, 10)
-}
 
 function SiteSidebar() {
   return (
@@ -214,29 +79,204 @@ function AdminSidebar() {
 }
 
 function SearchLayout({ open, onClose, mode = 'site' }) {
-  const [query, setQuery] = useState('')
-  const copy = getModeCopy(mode)
+  const dispatch = useDispatch()
+  const { query, setQuery, debouncedQuery } = useSearch()
+  const { user, authors, getAuthors } = useAuth()
+  const articles = useSelector((state) => state.articles.articles)
+  const videos = useSelector((state) => state.videos.videos)
+  const categories = useSelector((state) => state.categories.categories)
+  const comments = useSelector((state) => state.comments.comments)
+  const copy = mode === 'admin'
+    ? {
+        panelClass: 'w-[min(96%,1100px)] border-slate-200 bg-white text-slate-900',
+        inputClass: 'border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:border-primary',
+        closeClass: 'border-slate-200 text-slate-600 hover:bg-slate-100',
+        resultClass: 'border-slate-200 bg-white hover:border-primary/40 hover:bg-primary/5',
+        chipClass: 'bg-slate-100 text-slate-600',
+        emptyClass: 'border-slate-200 bg-slate-50 text-slate-500',
+        eyebrow: 'Admin Search',
+        title: 'Search dashboard areas, articles, authors and workflows',
+        placeholder: 'Search articles, authors, sections or logs...',
+        helper: 'Quick access for newsroom operations and publishing control.',
+      }
+    : mode === 'author'
+      ? {
+          panelClass: 'w-[min(96%,1040px)] border-primary/10 bg-white text-slate-900',
+          inputClass: 'border-primary/10 bg-background-light text-slate-900 placeholder:text-slate-400 focus:border-primary',
+          closeClass: 'border-slate-200 text-slate-600 hover:bg-slate-100',
+          resultClass: 'border-primary/10 bg-white hover:border-primary/30 hover:bg-primary/[0.03]',
+          chipClass: 'bg-primary/10 text-primary',
+          emptyClass: 'border-primary/10 bg-background-light text-slate-500',
+          eyebrow: 'Author Search',
+          title: 'Search your drafts, analytics and writing workspace',
+          placeholder: 'Search drafts, analytics or comments...',
+          helper: 'Built for editorial flow, personal performance and publishing tools.',
+        }
+      : {
+          panelClass: 'w-[min(96%,1000px)] border-slate-200 bg-white text-slate-900',
+          inputClass: 'border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus:border-primary',
+          closeClass: 'border-slate-200 text-slate-600 hover:bg-slate-100',
+          resultClass: 'border-slate-200 bg-white hover:border-primary/40 hover:bg-primary/5',
+          chipClass: 'bg-slate-100 text-slate-600',
+          emptyClass: 'border-slate-200 bg-white text-slate-500',
+          eyebrow: 'Site Search',
+          title: 'Search news, videos and topics across the site',
+          placeholder: 'Search news, videos, and topics...',
+          helper: 'Explore the newsroom quickly with a clean reader-friendly layout.',
+        }
+
+  function handleClose() {
+    onClose()
+  }
 
   useEffect(() => {
     if (!open) return undefined
 
     function handleEsc(event) {
       if (event.key === 'Escape') {
-        onClose()
+        handleClose()
       }
     }
 
     document.addEventListener('keydown', handleEsc)
     return () => document.removeEventListener('keydown', handleEsc)
-  }, [open, onClose])
+  }, [open])
 
   useEffect(() => {
     if (!open) {
-      setQuery('')
+      return
     }
-  }, [open])
 
-  const results = useMemo(() => filterResults(buildResults(mode), query), [mode, query])
+    if (!articles.length) {
+      dispatch(fetchArticles({ page: 1, limit: 50 }))
+    }
+
+    if ((mode === 'site' || mode === 'admin') && !categories.length) {
+      dispatch(fetchPublicCategories())
+    }
+
+    if (mode === 'site' && !videos.length) {
+      dispatch(fetchVideos({ page: 1, limit: 12 }))
+    }
+
+    if (mode === 'admin' && !authors.length) {
+      getAuthors().catch(() => {})
+    }
+  }, [articles.length, authors.length, categories.length, dispatch, getAuthors, mode, open, videos.length])
+
+  const results = useMemo(() => {
+    const items = mode === 'admin'
+      ? [
+          ...ADMIN_NAV_ITEMS.map((item) => ({
+            id: `admin-nav-${item.label}`,
+            type: 'Section',
+            title: item.label,
+            subtitle: 'Admin workspace',
+            path: item.path,
+          })),
+          ...articles.map((item) => ({
+            id: `admin-article-${item.id || item.slug}`,
+            type: 'Article',
+            title: item.title,
+            subtitle: `${item.category || 'News'} | ${item.status || 'Draft'}`,
+            path: item.id ? `/admin/articles/${item.id}/edit` : '/admin/articles',
+          })),
+          ...authors.map((item) => ({
+            id: `admin-author-${item.id || item.email}`,
+            type: 'Author',
+            title: `${item.first_name || ''} ${item.last_name || ''}`.trim() || item.email || 'Author',
+            subtitle: item.email || item.role || 'Author account',
+            path: '/admin/authors',
+          })),
+          ...categories.map((item) => ({
+            id: `admin-category-${item.id || item.slug}`,
+            type: 'Category',
+            title: item.name,
+            subtitle: item.slug || 'Category',
+            path: '/admin/categories',
+          })),
+          ...comments.map((item) => ({
+            id: `admin-comment-${item.id}`,
+            type: 'Comment',
+            title: item.articleTitle || 'Comment',
+            subtitle: item.name ? `${item.name} | ${item.status || 'pending'}` : item.status || 'pending',
+            path: '/admin/comments',
+          })),
+        ]
+      : mode === 'author'
+        ? [
+            ...AUTHOR_NAV_ITEMS.map((item) => ({
+              id: `author-nav-${item.label}`,
+              type: 'Section',
+              title: item.label,
+              subtitle: 'Author workspace',
+              path: item.path,
+            })),
+            ...articles
+              .filter((item) => {
+                const fullName = `${user?.first_name || ''} ${user?.last_name || ''}`.trim()
+
+                if (user?.id && item.created_by === user.id) {
+                  return true
+                }
+
+                if (fullName && item.author === fullName) {
+                  return true
+                }
+
+                return false
+              })
+              .map((item) => ({
+                id: `author-article-${item.id || item.slug}`,
+                type: item.status || 'Article',
+                title: item.title,
+                subtitle: `${item.category || 'News'} | ${item.status || 'Draft'}`,
+                path: item.id ? `/author/articles/${item.id}/edit` : '/author/articles',
+              })),
+          ]
+        : [
+            ...articles
+              .filter((item) => item.status === 'Published')
+              .map((item) => ({
+                id: `site-article-${item.id || item.slug}`,
+                type: 'Article',
+                title: item.title,
+                subtitle: item.category || 'News',
+                path: `/news/${item.slug}`,
+              })),
+            ...videos.map((item) => ({
+              id: `site-video-${item.id || item.slug}`,
+              type: 'Video',
+              title: item.title,
+              subtitle: item.category || 'Video',
+              path: `/videos/${item.slug}`,
+            })),
+            ...categories
+              .filter((item) => item.is_public !== false && item.is_active !== false)
+              .map((item) => ({
+                id: `site-category-${item.id || item.slug}`,
+                type: 'Category',
+                title: item.name,
+                subtitle: 'Browse category',
+                  path:
+                    String(item.slug || '').replace(/^\//, '') === 'video' || String(item.slug || '').replace(/^\//, '') === 'videos'
+                      ? '/videos'
+                      : `/category/${String(item.slug || '').replace(/^\//, '')}`,
+              })),
+          ]
+
+    if (!debouncedQuery.trim()) {
+      return items.slice(0, 8)
+    }
+
+    return items
+      .filter(
+        (item) =>
+          item.title.toLowerCase().includes(debouncedQuery.trim().toLowerCase()) ||
+          item.subtitle.toLowerCase().includes(debouncedQuery.trim().toLowerCase())
+      )
+      .slice(0, 10)
+  }, [debouncedQuery, mode])
 
   if (!open) return null
 
@@ -252,7 +292,7 @@ function SearchLayout({ open, onClose, mode = 'site' }) {
             </div>
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               className={`inline-flex h-11 w-11 items-center justify-center border transition ${copy.closeClass}`}
               aria-label="Close search"
             >
@@ -282,7 +322,7 @@ function SearchLayout({ open, onClose, mode = 'site' }) {
                   <AppLink
                     key={item.id}
                     to={item.path}
-                    onClick={onClose}
+                    onClick={handleClose}
                     className={`flex items-center justify-between border px-4 py-4 transition ${copy.resultClass}`}
                   >
                     <div>

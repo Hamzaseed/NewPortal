@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Helmet } from 'react-helmet-async'
 import { toast } from 'sonner'
 import Footer from '../components/layout/Footer'
 import { Button } from '../components/ui/button'
@@ -15,37 +16,41 @@ function ForgotPasswordPage() {
   const [resetToken, setResetToken] = useState('')
   const [resetLink, setResetLink] = useState('')
 
-  const handleSubmit = async (event) => {
-    event.preventDefault()
+const handleSubmit = async (e) => {
+  e.preventDefault()
 
-    if (!email.trim()) {
-      toast.error('Please enter your email address')
-      return
-    }
-
-    try {
-      setSending(true)
-      const token = await requestPasswordReset(email)
-
-      if (token) {
-        setResetToken(token)
-        const nextLink = `${window.location.origin}/reset-password?token=${encodeURIComponent(token)}`
-        setResetLink(nextLink)
-      } else {
-        setResetToken('')
-        setResetLink('')
-      }
-
-      toast.success('If that email exists, a reset link was sent.')
-    } catch (err) {
-      toast.error(err?.message || 'Could not send reset link')
-    } finally {
-      setSending(false)
-    }
+  if (!email.trim()) {
+    return toast.error('Please enter your email address')
   }
 
+  try {
+    setSending(true)
+
+    const token = await requestPasswordReset(email)
+
+    if (token) {
+      setResetToken(token)
+      setResetLink(
+        `${window.location.origin}/reset-password?token=${encodeURIComponent(token)}`
+      )
+    } else {
+      setResetToken('')
+      setResetLink('')
+    }
+
+    toast.success('If that email exists, a reset link was sent.')
+  } catch (err) {
+    toast.error(err?.message || 'Could not send reset link')
+  } finally {
+    setSending(false)
+  }
+}
   return (
     <div className="flex min-h-screen flex-col bg-background-light text-slate-900">
+      <Helmet>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
+
       <main className="flex flex-1 items-center justify-center px-4 py-10 sm:py-16">
         <div className="w-full max-w-md border border-slate-200 bg-white p-8 shadow-sm">
           <div className="text-center">
